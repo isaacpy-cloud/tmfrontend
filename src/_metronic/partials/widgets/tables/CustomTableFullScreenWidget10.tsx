@@ -11,7 +11,24 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [cserror, setError] = useState(null)
-  const [transfer_durum, setTransferDurum]  = useState("");
+  const [modalTransferId, setmodalTransferId] = useState()
+
+  const [modalState, setModalState] = useState({
+    transferDurum: '',
+    modalKalkisYeri: '',
+    modalVarisYeri: '',
+    modalTransferId: '',
+    modalMusteriAdi: '',
+    modalMusteriTelefon: '',
+    modalSofor: '',
+    modalAcenteFiyat: '',
+    modalAltTedarikci: '',
+    modalEkHizmet: '',
+    modalMusteriNotu: '',
+    modalTahsilatDurumu: '',
+  })
+
+  const [modalData, setModalData] = useState<any[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +45,36 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
     fetchData()
   }, [])
 
-  console.log(data)
+  const modalTransferUpdate = async (rezervasyonId) => {
+    try {
+      setmodalTransferId(rezervasyonId)
+      const transferData = await axios.post(
+        'http://localhost:3000/api/transfer-update-information',
+        {
+          rezervasyonId: rezervasyonId,
+        }
+      )
+      setModalData(transferData.data)
+      modalData.map((data) => {
+        setModalState((prevState) => ({
+          ...prevState,
+          transferDurum: data.durum,
+          modalKalkisYeri: data.kalkis,
+          modalVarisYeri: data.varis,
+          modalMusteriAdi: data.musteri_adi,
+          modalMusteriTelefon: data.musteri_tel,
+          modalSofor: data.sofor,
+          modalAcenteFiyat: data.acente_fiyat,
+          modalEkHizmet: data.ek_hizmet,
+          modalMusteriNotu: data.musteri_notu,
+          modalTahsilatDurumu: data.yolcu_tahsilat,
+          modalAltTedarikci: data.alt_tedarikci,
+        }))
+      })
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   data.map((datas) => {
     console.log(datas._id)
@@ -41,14 +87,14 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
   if (cserror) {
     return <p>Hata: ${`error.message`}</p>
   }
-  const transfer_completed = async (rezervasyonId,recordChanged) => {
-    try{
+  const transfer_completed = async (rezervasyonId, recordChanged) => {
+    try {
       const updateData = await axios.post('http://localhost:3000/transfer-update', {
         rid: rezervasyonId,
-        rched: recordChanged
+        rched: recordChanged,
       })
-    }catch(error){
-      console.log(error);
+    } catch (error) {
+      console.log(error)
     }
   }
   return (
@@ -110,7 +156,6 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                 <th className='min-w-150px'>Kalkış</th>
                 <th className='min-w-150px'>Varış</th>
                 <th className='min-w-150px'>Müşteri Adı</th>
-                <th className='min-w-150px'>Müşteri Numara</th>
                 <th className='min-w-150px'>Kişi</th>
                 <th className='min-w-150px'>Şoför</th>
                 <th className='min-w-150px'>Acente Fiyat</th>
@@ -127,9 +172,28 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
             <tbody>
               {data.map((item) => {
                 const splitTarih = item.tarih.split(' ')
-                
+                let className = ''
+                switch (item.durum) {
+                  case 'Transfer Tamamlandı':
+                    className = 'bg-success'
+                    break
+                  case 'Transfer Tamamlanmadı':
+                    className = 'bg-white'
+                    break
+                  case 'Transferde Hata Oluştu':
+                    className = 'bg-warning'
+                    break
+                  case 'No-Show':
+                    className = 'bg-primary'
+                    break
+                  case 'Transfer İptal':
+                    className = 'bg-danger'
+                    break
+                  default:
+                    className = 'bg-white' // Varsayılan durum
+                }
                 return (
-                  <tr key={item._id}>
+                  <tr key={item._id} className={className}>
                     <td>
                       <div className='form-check form-check-sm form-check-custom form-check-solid'>
                         <input
@@ -143,7 +207,7 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                       <a href='#' className='text-dark fw-bold text-hover-primary d-block fs-6'>
                         {splitTarih[1]}
                       </a>
-                      <span className='text-muted fw-semibold text-muted d-block fs-7'>
+                      <span className='text fw-semibold text-black d-block fs-7'>
                         {splitTarih[0]}
                       </span>
                     </td>
@@ -151,12 +215,12 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                       <a href='#' className='text-dark fw-bold text-hover-primary d-block fs-6'>
                         13:05
                       </a>
-                      <span className='text-muted fw-semibold text-muted d-block fs-7'>
+                      <span className='text fw-semibold text-black d-block fs-7'>
                         {splitTarih[0]}
                       </span>
                     </td>
                     <td>
-                      <span className='text-muted fw-semibold text-muted'>{item.ucus_bilgisi}</span>
+                      <span className='text fw-semibold'>{item.ucus_bilgisi}</span>
                     </td>
                     <td>
                       <span className='fw-bold text-gray-900'>{item.transfer_detay}</span>
@@ -168,7 +232,7 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                       <span className='fw-bold text-gray-900'>{item.alt_tedarikci}</span>
                     </td>
                     <td>
-                      <span className='fw-bold text-warning'>{item.durum}</span>
+                      <span className='fw-bold text-black'>{item.durum}</span>
                     </td>
                     <td>
                       <span className='fw-bold text-gray-900'>{item.kalkis}</span>
@@ -177,10 +241,9 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                       <span className='fw-bold text-gray-900'>{item.varis}</span>
                     </td>
                     <td>
-                      <span className='fw-bold text-gray-900'>{item.musteri_adi}</span>
-                    </td>
-                    <td>
-                      <span className='fw-bold text-gray-900'>{item.musteri_tel}</span>
+                      <span className='fw-bold text-gray-900'>
+                        {item.musteri_adi + ' ' + item.musteri_tel}
+                      </span>
                     </td>
                     <td>
                       <span className='fw-bold text-gray-900'>{item.kisi}</span>
@@ -217,6 +280,11 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                         <a
                           href='#'
                           className='btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1'
+                          data-bs-toggle='modal'
+                          data-bs-target='#kt_modal_1'
+                          onClick={() => {
+                            modalTransferUpdate(item.rezervasyon_numarasi)
+                          }}
                         >
                           <KTIcon iconName='pencil' className='fs-3' />
                         </a>
@@ -234,9 +302,13 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                             data-kt-menu='true'
                           >
                             <div className='menu-item px-3'>
-                              <a onClick={() => {
-                                transfer_completed(item.rezervasyon_numarasi, "Transfer Tamamlandı")
-                              }}
+                              <a
+                                onClick={() => {
+                                  transfer_completed(
+                                    item.rezervasyon_numarasi,
+                                    'Transfer Tamamlandı'
+                                  )
+                                }}
                                 className='menu-link px-3'
                               >
                                 Transfer Tamamlandı
@@ -247,12 +319,23 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                                 href='#'
                                 className='menu-link px-3'
                                 data-kt-filemanager-table='rename'
+                                onClick={() => {
+                                  transfer_completed(
+                                    item.rezervasyon_numarasi,
+                                    'Transfer Tamamlanmadı'
+                                  )
+                                }}
                               >
                                 Transfer Tamamlanmadı
                               </a>
                             </div>
                             <div className='menu-item px-3'>
-                              <a href='#' className='menu-link px-3'>
+                              <a href='#' className='menu-link px-3' onClick={() => {
+                                  transfer_completed(
+                                    item.rezervasyon_numarasi,
+                                    'Transferde Hata Oluştu'
+                                  )
+                                }}>
                                 Transferde Hata Oluştu
                               </a>
                             </div>
@@ -260,9 +343,12 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                               <a
                                 href='#'
                                 className='menu-link px-3'
-                                data-kt-filemanager-table-filter='move_row'
-                                data-bs-toggle='modal'
-                                data-bs-target='#kt_modal_move_to_folder'
+                                onClick={() => {
+                                  transfer_completed(
+                                    item.rezervasyon_numarasi,
+                                    'No Show'
+                                  )
+                                }}
                               >
                                 No-Show
                               </a>
@@ -271,7 +357,12 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
                               <a
                                 href='#'
                                 className='menu-link text-danger px-3'
-                                data-kt-filemanager-table-filter='delete_row'
+                                onClick={() => {
+                                  transfer_completed(
+                                    item.rezervasyon_numarasi,
+                                    'Transfer İptal'
+                                  )
+                                }}
                               >
                                 Transfer İptal
                               </a>
@@ -289,6 +380,150 @@ const CustomTableFullScreenWidget10: React.FC<Props> = ({className}) => {
           {/* end::Table */}
         </div>
         {/* end::Table container */}
+      </div>
+
+      <div className='modal fade' tabIndex={-1} id='kt_modal_1'>
+        <div className='modal-dialog modal-xl'>
+          <div className='modal-content'>
+            <div className='modal-header'>
+              <h5 className='modal-title'>{modalTransferId} Numaralı Kaydı Güncelliyorsunuz</h5>
+              <div
+                className='btn btn-icon btn-sm btn-active-light-primary ms-2'
+                data-bs-dismiss='modal'
+                aria-label='Close'
+              ></div>
+            </div>
+
+            <div className='modal-body'>
+              <div className='alert alert-warning d-flex align-items-center p-5 mb-10'>
+                <span className='svg-icon svg-icon-2hx svg-icon-warning me-3'></span>
+
+                <div className='d-flex flex-column'>
+                  <h5 className='mb-1'>Transfer Değişiklik Uyarısı</h5>
+                  <span>
+                    Lütfen aşağıdaki değiştirdiğiniz alanları güncel bilgiler ile doldurunuz.
+                    Yapılan değişikliklerin geri alınması mümkün değildir.
+                  </span>
+                </div>
+              </div>
+
+              <div className='col-lg-12 d-flex flex-center'>
+                <div className='col-md-5 p-lg-8'>
+                  <div className='mb-10'>
+                    <label className='form-label'>Kalkış Yeri</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalKalkisYeri}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Varış Yeri</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalVarisYeri}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Müşteri Adı</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalMusteriAdi}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Müşteri Telefon Numarası</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalMusteriTelefon}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Şoför Seçiniz</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalSofor}
+                      placeholder=''
+                    />
+                  </div>
+                </div>
+
+                <div className='col-md-5 p-lg-8'>
+                  <div className='mb-10'>
+                    <label className='form-label'>Acente Fiyatı</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalAcenteFiyat}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Alt Tedarikçi Fiyat</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalAltTedarikci}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Ek Hizmet İstenmiş mi?</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalEkHizmet}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Müşteri Notu</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalMusteriNotu}
+                      placeholder=''
+                    />
+                  </div>
+
+                  <div className='mb-10'>
+                    <label className='form-label'>Tahsilat Durumu</label>
+                    <input
+                      type='text'
+                      className='form-control'
+                      value={modalState.modalTahsilatDurumu}
+                      placeholder=''
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='modal-footer'>
+              <button type='button' className='btn btn-light' data-bs-dismiss='modal'>
+                Kapat
+              </button>
+              <button type='button' className='btn btn-primary'>
+                Değişiklikleri Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       {/* begin::Body */}
     </div>
